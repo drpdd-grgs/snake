@@ -5,6 +5,8 @@ import java.awt.*;
 
 public class MainFrame extends JFrame {
 
+    private static final String windowName = "Snake";
+
     private JPanel mainPanel;
 
     public MainFrame() {
@@ -19,7 +21,7 @@ public class MainFrame extends JFrame {
         mainPanel = new JPanel();
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Snake");
+        setTitle(windowName);
         setPreferredSize(new Dimension(ViewConstants.WINDOW_WIDTH, ViewConstants.WINDOW_HEIGHT));
         setResizable(false);
 

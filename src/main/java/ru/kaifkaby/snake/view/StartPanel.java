@@ -8,6 +8,7 @@ import java.awt.event.KeyListener;
 public class StartPanel extends JPanel {
 
     private static final String welcomeText = "PRESS ENTER";
+    private static final int welcomeTextBlinkDuration = 500;
 
     private Color welcomeTextColor = Color.WHITE;
 
@@ -23,20 +24,19 @@ public class StartPanel extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.setColor(welcomeTextColor);
-        g.getFontMetrics().getHeight();
         g.drawString(welcomeText,
                 ViewConstants.WINDOW_WIDTH / 2 - g.getFontMetrics().stringWidth(welcomeText) / 2,
                 ViewConstants.WINDOW_HEIGHT / 2 - g.getFontMetrics().getHeight());
     }
 
     private void initStartTextTimer() {
-        Timer timer = new Timer(500, _ -> switchColor());
+        Timer timer = new Timer(welcomeTextBlinkDuration, _ -> switchWelcomeTextColor());
         timer.setRepeats(true);
         timer.setCoalesce(true);
         timer.start();
     }
 
-    private void switchColor() {
+    private void switchWelcomeTextColor() {
         welcomeTextColor = welcomeTextColor == Color.WHITE ? Color.BLACK : Color.WHITE;
         repaint();
     }

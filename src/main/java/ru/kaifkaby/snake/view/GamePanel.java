@@ -1,6 +1,7 @@
 package ru.kaifkaby.snake.view;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class GamePanel extends JPanel {
 
@@ -8,5 +9,8 @@ public class GamePanel extends JPanel {
 
     public GamePanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
+        setBackground(Color.BLACK);
+        setFocusable(true);
+        setLayout(null);
     }
 }
