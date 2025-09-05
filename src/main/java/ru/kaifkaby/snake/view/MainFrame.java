@@ -1,5 +1,7 @@
 package ru.kaifkaby.snake.view;
 
+import ru.kaifkaby.snake.util.Constants;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -22,11 +24,11 @@ public class MainFrame extends JFrame {
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setTitle(windowName);
-        setPreferredSize(new Dimension(ViewConstants.WINDOW_WIDTH, ViewConstants.WINDOW_HEIGHT));
+        setPreferredSize(new Dimension(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT));
         setResizable(false);
 
-        mainPanel.setMinimumSize(new Dimension(ViewConstants.WINDOW_WIDTH, ViewConstants.WINDOW_HEIGHT));
-        mainPanel.setSize(new Dimension(ViewConstants.WINDOW_WIDTH, ViewConstants.WINDOW_HEIGHT));
+        mainPanel.setMinimumSize(new Dimension(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT));
+        mainPanel.setSize(new Dimension(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT));
         mainPanel.setLayout(new GridLayout(1, 0));
 
         GroupLayout groupLayout = new GroupLayout(getContentPane());

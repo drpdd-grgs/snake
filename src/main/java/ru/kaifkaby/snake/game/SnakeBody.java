@@ -1,39 +1,24 @@
 package ru.kaifkaby.snake.game;
 
-import java.util.function.IntFunction;
+import java.util.function.Function;
 
 public class SnakeBody {
 
-    private Integer x;
-    private Integer y;
+    private Point point;
     private SnakeBody next;
     private Direction direction;
 
-    public SnakeBody(int x, int y, Direction direction) {
-        this.x = x;
-        this.y = y;
+    public SnakeBody(Point point, Direction direction) {
+        this.point = point;
         this.direction = direction;
     }
 
     public void move() {
-        x = direction.getXSetter().apply(x);
-        y = direction.getYSetter().apply(y);
+        point = direction.moveFunction.apply(point);
     }
 
-    public int getX() {
-        return x;
-    }
-
-    public int getY() {
-        return y;
-    }
-
-    public SnakeBody getNext() {
-        return next;
-    }
-
-    public void setNext(SnakeBody next) {
-        this.next = next;
+    public Point getPoint() {
+        return point;
     }
 
     public Direction getDirection() {
@@ -44,26 +29,39 @@ public class SnakeBody {
         this.direction = direction;
     }
 
+    public SnakeBody getNext() {
+        return next;
+    }
+
+    public void setNext(SnakeBody next) {
+        this.next = next;
+    }
+
     public enum Direction {
-        UP(x -> x, y -> y + 1),
-        DOWN(x -> x, y -> y - 1),
-        RIGHT(x -> x + 1, y -> y),
-        LEFT(x -> x - 1, y -> y);
 
-        private final IntFunction<Integer> xSetter;
-        private final IntFunction<Integer> ySetter;
+        UP(point -> new Point(point.x(), point.y() - 1)),
+        DOWN(point -> new Point(point.x(), point.y() + 1)),
+        RIGHT(point -> new Point(point.x() + 1, point.y())),
+        LEFT(point -> new Point(point.x() - 1, point.y()));
 
-        Direction(IntFunction<Integer> xSetter, IntFunction<Integer> ySetter) {
-            this.xSetter = xSetter;
-            this.ySetter = ySetter;
+        private final Function<Point, Point> moveFunction;
+
+        Direction(Function<Point, Point> moveFunction) {
+            this.moveFunction = moveFunction;
         }
 
-        public IntFunction<Integer> getXSetter() {
-            return xSetter;
+        public Function<Point, Point> getMoveFunction() {
+            return moveFunction;
         }
 
-        public IntFunction<Integer> getYSetter() {
-            return ySetter;
+        public boolean isOpposite(Direction direction) {
+            Direction opposite = switch (this) {
+                case Direction.UP -> Direction.DOWN;
+                case Direction.DOWN -> Direction.UP;
+                case Direction.LEFT -> Direction.RIGHT;
+                case Direction.RIGHT -> Direction.LEFT;
+            };
+            return opposite.equals(direction);
         }
     }
 }

@@ -5,6 +5,7 @@ import ru.kaifkaby.snake.view.StartPanel;
 
 import javax.swing.*;
 
+// TODO: speed depends on difficulty and smooth animations
 public class SnakeApp {
 
     public static void main(String[] args) {

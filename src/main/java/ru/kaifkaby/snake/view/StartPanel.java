@@ -1,5 +1,7 @@
 package ru.kaifkaby.snake.view;
 
+import ru.kaifkaby.snake.util.Constants;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -7,47 +9,36 @@ import java.awt.event.KeyListener;
 
 public class StartPanel extends JPanel {
 
-    private static final String welcomeText = "PRESS ENTER";
-    private static final int welcomeTextBlinkDuration = 500;
-
     private Color welcomeTextColor = Color.WHITE;
 
     public StartPanel(MainFrame mainFrame) {
         setBackground(Color.BLACK);
         setFocusable(true);
         setLayout(null);
-        initStartTextTimer();
-        addKeyListener(new StartPanelKeyListener(mainFrame));
+        addKeyListener(new StartPanelKeyListener(mainFrame, initStartTextTimer()));
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.setColor(welcomeTextColor);
-        g.drawString(welcomeText,
-                ViewConstants.WINDOW_WIDTH / 2 - g.getFontMetrics().stringWidth(welcomeText) / 2,
-                ViewConstants.WINDOW_HEIGHT / 2 - g.getFontMetrics().getHeight());
+        g.drawString(Constants.WELCOME_TEXT, Constants.WELCOME_TEXT_X, Constants.WELCOME_TEXT_Y);
     }
 
-    private void initStartTextTimer() {
-        Timer timer = new Timer(welcomeTextBlinkDuration, _ -> switchWelcomeTextColor());
+    private Timer initStartTextTimer() {
+        Timer timer = new Timer(Constants.WELCOME_TEXT_BLINK_DURATION, _ -> switchWelcomeTextColor());
         timer.setRepeats(true);
         timer.setCoalesce(true);
         timer.start();
+        return timer;
     }
 
     private void switchWelcomeTextColor() {
-        welcomeTextColor = welcomeTextColor == Color.WHITE ? Color.BLACK : Color.WHITE;
+        welcomeTextColor = Color.WHITE.equals(welcomeTextColor) ? Color.BLACK : Color.WHITE;
         repaint();
     }
 
-    static class StartPanelKeyListener implements KeyListener {
-
-        private final MainFrame mainFrame;
-
-        private StartPanelKeyListener(MainFrame mainFrame) {
-            this.mainFrame = mainFrame;
-        }
+    record StartPanelKeyListener(MainFrame mainFrame, Timer timer) implements KeyListener {
 
         @Override
         public void keyTyped(KeyEvent e) {
@@ -65,6 +56,7 @@ public class StartPanel extends JPanel {
         }
 
         private void loadGame() {
+            timer.stop();
             mainFrame.getMainPanel().removeAll();
             GamePanel gamePanel = new GamePanel(mainFrame);
             mainFrame.getMainPanel().add(gamePanel);
