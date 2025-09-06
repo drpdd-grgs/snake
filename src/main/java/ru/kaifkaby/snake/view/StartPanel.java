@@ -1,5 +1,6 @@
 package ru.kaifkaby.snake.view;
 
+import ru.kaifkaby.snake.game.Difficulty;
 import ru.kaifkaby.snake.util.Constants;
 
 import javax.swing.*;
@@ -9,13 +10,26 @@ import java.awt.event.KeyListener;
 
 public class StartPanel extends JPanel {
 
+    private final Difficulty[] difficulties;
+
+    private int currentDifficulty;
+
     private Color welcomeTextColor = Color.WHITE;
 
+    private final MainFrame mainFrame;
+
+    private final Timer timer;
+
     public StartPanel(MainFrame mainFrame) {
+        this.mainFrame = mainFrame;
+        timer = new Timer(Constants.WELCOME_TEXT_BLINK_DURATION, _ -> switchWelcomeTextColor());
         setBackground(Color.BLACK);
         setFocusable(true);
         setLayout(null);
-        addKeyListener(new StartPanelKeyListener(mainFrame, initStartTextTimer()));
+        initStartTextTimer();
+        addKeyListener(new StartPanelKeyListener(this));
+        difficulties = Difficulty.values();
+        currentDifficulty = 0;
     }
 
     @Override
@@ -23,14 +37,14 @@ public class StartPanel extends JPanel {
         super.paintComponent(g);
         g.setColor(welcomeTextColor);
         g.drawString(Constants.WELCOME_TEXT, Constants.WELCOME_TEXT_X, Constants.WELCOME_TEXT_Y);
+        g.setColor(Color.WHITE);
+        g.drawString(String.format(Constants.DIFFICULTY_TEXT, difficulties[currentDifficulty].name()), Constants.DIFFICULTY_TEXT_X, Constants.DIFFICULTY_TEXT_Y);
     }
 
-    private Timer initStartTextTimer() {
-        Timer timer = new Timer(Constants.WELCOME_TEXT_BLINK_DURATION, _ -> switchWelcomeTextColor());
+    private void initStartTextTimer() {
         timer.setRepeats(true);
         timer.setCoalesce(true);
         timer.start();
-        return timer;
     }
 
     private void switchWelcomeTextColor() {
@@ -38,7 +52,7 @@ public class StartPanel extends JPanel {
         repaint();
     }
 
-    record StartPanelKeyListener(MainFrame mainFrame, Timer timer) implements KeyListener {
+    record StartPanelKeyListener(StartPanel startPanel) implements KeyListener {
 
         @Override
         public void keyTyped(KeyEvent e) {
@@ -46,19 +60,33 @@ public class StartPanel extends JPanel {
 
         @Override
         public void keyPressed(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                loadGame();
+            }
+            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                startPanel.currentDifficulty--;
+                if (startPanel.currentDifficulty == -1) {
+                    startPanel.currentDifficulty = 3;
+                }
+            }
+            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                startPanel.currentDifficulty++;
+                if (startPanel.currentDifficulty == 4) {
+                    startPanel.currentDifficulty = 0;
+                }
+            }
         }
 
         @Override
         public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                loadGame();
-            }
         }
 
         private void loadGame() {
-            timer.stop();
+            MainFrame mainFrame = startPanel.mainFrame;
+            startPanel.timer.stop();
+
             mainFrame.getMainPanel().removeAll();
-            GamePanel gamePanel = new GamePanel(mainFrame);
+            GamePanel gamePanel = new GamePanel(mainFrame, startPanel.difficulties[startPanel.currentDifficulty]);
             mainFrame.getMainPanel().add(gamePanel);
             gamePanel.requestFocusInWindow();
             mainFrame.setVisible(true);

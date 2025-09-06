@@ -6,38 +6,58 @@ import ru.kaifkaby.snake.util.Constants;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 public class GamePanel extends JPanel {
 
     private final Game game;
 
-    public GamePanel(MainFrame mainFrame) {
+    private final Difficulty difficulty;
+
+    private final MainFrame mainFrame;
+
+    private final ConcurrentLinkedQueue<Consumer<Game>> inputQueue;
+
+    private final Timer gameTimer;
+
+    private final Timer graphicsTimer;
+
+    public GamePanel(MainFrame mainFrame, Difficulty difficulty) {
         setBackground(Color.BLACK);
         setFocusable(true);
         setLayout(null);
-        game = new Game();
-        addKeyListener(new GameKeyListener(game, mainFrame));
+        this.game = new Game();
+        this.mainFrame = mainFrame;
+        this.difficulty = difficulty;
+        this.inputQueue = new ConcurrentLinkedQueue<>();
+        this.gameTimer = new Timer(difficulty.getTickrate(), getGameActionListener());
+        this.graphicsTimer = new Timer(1, getGraphicsActionListener());
+        addKeyListener(new GameKeyListener(this));
         initGameTimer();
+        initGraphicsTimer();
     }
 
     private void initGameTimer() {
-        Timer timer = new Timer(Constants.TICK_RATE, _ -> {
-            if (!game.isGameOver()) {
-                game.step();
-            }
-            repaint();
-        });
-        timer.setRepeats(true);
-        timer.setCoalesce(true);
-        timer.start();
+        gameTimer.setRepeats(true);
+        gameTimer.setCoalesce(true);
+        gameTimer.start();
+    }
+
+    private void initGraphicsTimer() {
+        graphicsTimer.setRepeats(true);
+        graphicsTimer.setCoalesce(true);
+        graphicsTimer.start();
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         drawScore(g);
+        drawDifficulty(g);
         drawField(g);
         drawSnake(g);
         drawFruit(g);
@@ -46,11 +66,53 @@ public class GamePanel extends JPanel {
         }
     }
 
+    public Game getGame() {
+        return game;
+    }
+
+    public MainFrame getMainFrame() {
+        return mainFrame;
+    }
+
+    public Difficulty getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDirection(SnakeBody.Direction direction) {
+        inputQueue.add(game -> game.setSnakeDirection(direction));
+    }
+
+    private ActionListener getGameActionListener() {
+        return _ -> {
+            Consumer<Game> input;
+            if (!game.isGameOver()) {
+                input = inputQueue.poll();
+                if (input != null) {
+                    input.accept(game);
+                }
+                game.step();
+            }
+        };
+    }
+
+    private ActionListener getGraphicsActionListener() {
+        return _ -> repaint();
+    }
+
     private void drawScore(Graphics g) {
         g.setColor(Color.WHITE);
+
+
         g.drawString(String.format(Constants.SCORE_TEXT, game.getScore()),
-                Constants.SCORE_TEXT_WIDTH_OFFSET,
-                Constants.SCORE_TEXT_HEIGHT_OFFSET);
+                Constants.SCORE_TEXT_X,
+                Constants.SCORE_TEXT_Y);
+    }
+
+    private void drawDifficulty(Graphics g) {
+        g.setColor(Color.WHITE);
+        g.drawString(String.format(Constants.DIFFICULTY_GAME_TEXT, difficulty),
+                Constants.DIFFICULTY_GAME_TEXT_X,
+                Constants.DIFFICULTY_GAME_TEXT_Y);
     }
 
     private void drawField(Graphics g) {
@@ -73,18 +135,30 @@ public class GamePanel extends JPanel {
                 g.setColor(Color.GREEN);
             }
             g.fillRect(
-                    Constants.GAME_WIDTH_OFFSET + point.x() * Constants.ITEM_SIZE,
-                    Constants.GAME_HEIGHT_OFFSET + point.y() * Constants.ITEM_SIZE,
+                    getProjectX(point.x()),
+                    getProjectY(point.y()),
                     Constants.ITEM_SIZE,
                     Constants.ITEM_SIZE);
+            if (snakeBody.equals(head)) {
+                g.setColor(Color.RED);
+                g.fillOval(
+                        getProjectX(point.x()),
+                        getProjectY(point.y()),
+                        Constants.SNAKE_EYES_SIZE,
+                        Constants.SNAKE_EYES_SIZE);
+                g.fillOval(
+                        getProjectX(point.x()) + Constants.SNAKE_EYES_DISTANCE,
+                        getProjectY(point.y()),
+                        Constants.SNAKE_EYES_SIZE,
+                        Constants.SNAKE_EYES_SIZE);
+            }
         }
     }
 
     private void drawFruit(Graphics g) {
         g.setColor(Color.RED);
         Point point = game.getFruit().point();
-        g.fillRect(
-                Constants.GAME_WIDTH_OFFSET + point.x() * Constants.ITEM_SIZE,
+        g.fillOval(Constants.GAME_WIDTH_OFFSET + point.x() * Constants.ITEM_SIZE,
                 Constants.GAME_HEIGHT_OFFSET + point.y() * Constants.ITEM_SIZE,
                 Constants.ITEM_SIZE,
                 Constants.ITEM_SIZE);
@@ -97,7 +171,15 @@ public class GamePanel extends JPanel {
                 Constants.GAME_OVER_TEXT_HEIGHT_OFFSET);
     }
 
-    record GameKeyListener(Game game, MainFrame mainFrame) implements KeyListener {
+    private int getProjectX(int x) {
+        return Constants.GAME_WIDTH_OFFSET + x * Constants.ITEM_SIZE;
+    }
+
+    private int getProjectY(int y) {
+        return Constants.GAME_WIDTH_OFFSET + y * Constants.ITEM_SIZE;
+    }
+
+    record GameKeyListener(GamePanel gamePanel) implements KeyListener {
 
         @Override
         public void keyTyped(KeyEvent e) {
@@ -105,16 +187,14 @@ public class GamePanel extends JPanel {
 
         @Override
         public void keyPressed(KeyEvent e) {
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            if (game.isGameOver() && e.getKeyCode() == KeyEvent.VK_ENTER) {
+            MainFrame mainFrame = gamePanel.getMainFrame();
+            if (gamePanel.getGame().isGameOver() && e.getKeyCode() == KeyEvent.VK_ENTER) {
                 mainFrame.getMainPanel().removeAll();
-                GamePanel gamePanel = new GamePanel(mainFrame);
-                mainFrame.getMainPanel().add(gamePanel);
-                gamePanel.requestFocusInWindow();
+                GamePanel newGamePanel = new GamePanel(mainFrame, gamePanel.getDifficulty());
+                mainFrame.getMainPanel().add(newGamePanel);
+                newGamePanel.requestFocusInWindow();
                 mainFrame.setVisible(true);
+                mainFrame.requestFocusInWindow();
             } else {
                 SnakeBody.Direction direction = switch (e.getKeyCode()) {
                     case KeyEvent.VK_LEFT -> SnakeBody.Direction.LEFT;
@@ -124,9 +204,13 @@ public class GamePanel extends JPanel {
                     default -> null;
                 };
                 if (direction != null) {
-                    game.setSnakeDirection(direction);
+                    gamePanel.setDirection(direction);
                 }
             }
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
         }
     }
 }
